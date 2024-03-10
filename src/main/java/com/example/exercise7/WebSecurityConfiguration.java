@@ -1,34 +1,41 @@
 package com.example.exercise7;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springdoc.core.GroupedOpenApi;
+import org.springdoc.core.SwaggerUiConfigParameters;
+import org.springdoc.core.SwaggerUiConfigProperties;
 
-import java.lang.reflect.Array;
-import java.util.Arrays;
+@Configuration
+@ConditionalOnProperty(name = "springdoc.swagger-ui.enabled", matchIfMissing = true)
+public class WebSecurityConfiguration implements WebMvcConfigurer {
 
-@EnableWebSecurity
-public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Bean
-    public CorsConfigurationSource corsConfigurationSource(){
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        CorsConfiguration defaultCors = new CorsConfiguration();
-        defaultCors.addAllowedOrigin("http://localhost:8080");
-        defaultCors.setAllowedMethods(Arrays.asList("GET", "POST", "PATCH", "OPTIONS"));
-        source.registerCorsConfiguration("/**", defaultCors);
-        return source;
+    public GroupedOpenApi api() {
+        return GroupedOpenApi.builder()
+                .group("api")
+                .pathsToMatch("/api/**")
+                .build();
     }
+
+    @Bean
+    public SwaggerUiConfigParameters swaggerUiConfigParameters() {
+        return new SwaggerUiConfigParameters(swaggerUiConfigProperties());
+    }
+
+    @Bean
+    public SwaggerUiConfigProperties swaggerUiConfigProperties() {
+        return new SwaggerUiConfigProperties();
+    }
+
     @Override
-    protected void configure(HttpSecurity http) throws Exception{
-        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        http.authorizeHttpRequests()
-                .antMatchers("/**").permitAll()
-                .antMatchers().authenticated();
-        http.csrf().disable();
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/swagger-ui/**")
+                .addResourceLocations("classpath:/META-INF/resources/webjars/springdoc-openapi-ui/")
+                .resourceChain(false);
     }
 }
+
